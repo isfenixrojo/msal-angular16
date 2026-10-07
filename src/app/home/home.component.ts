@@ -1,10 +1,33 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+// Required for MSAL
+import { MsalBroadcastService, MsalService } from '@azure/msal-angular';
+
+// Required for Angular multi-browser support
+import { EventMessage, EventType, AuthenticationResult } from '@azure/msal-browser';
+
+// Required for RJXS observables
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styles: ['']
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
+
+  constructor(
+    private authService: MsalService,
+    private msalBroadcastService: MsalBroadcastService
+  ) { }
+  ngOnInit(): void {
+    this.msalBroadcastService.msalSubject$
+      .pipe(
+        filter((msg: EventMessage) => msg.eventType === EventType.LOGIN_SUCCESS),
+      )
+      .subscribe((result: EventMessage) => {
+        const payload = result.payload as AuthenticationResult;
+        this.authService.instance.setActiveAccount(payload.account);
+      });
+  }
 
 }
